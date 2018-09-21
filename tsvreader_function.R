@@ -3,12 +3,17 @@ library(dplyr)
 
 #filename is name of tsv table
 #nlines is the number of lines to read at a time, default set to 1
-#nmax = total number of rows to read from file. default set to maximum row
+#nmax = total number of rows to read from file. provide this
+#nmax=(countLines(file))
 
 
-reader_function <- function(filename, nlines=1, nmax=(countLines(file))) {
+reader_function <- function(filename, nlines=1, nmax) {
   #import first 3 rows of tsv file with header to establish columns
-  new_table <- read.table(filename, nrows = 3, header = TRUE, sep = "\t", fill=TRUE, quote="")
+  new_table <- read.table(filename, nrows = 3, sep = "\t", header=TRUE, fill=TRUE, quote="", colClasses = "character")
+  # print("establishing top of table:")
+  # print(new_table)
+  
+  headers <- c(names(new_table))
   
   #set maxcols as the number of columns identified in the first 3 rows of new_table
   maxcols <- ncol(new_table)
@@ -18,9 +23,13 @@ reader_function <- function(filename, nlines=1, nmax=(countLines(file))) {
   
   #as long as the start_row is less than or equal to the nmax argument, the loop will keep going. once the start_row exceeds nmax (the last row), the while loop will end
   while (start_row <= nmax){
+    
     #read new table into temp_table. it will skip one less than start_row so that the first row is start_row. no headers so it binds to temp_table
     #will read nlines at a time
-    temp_table <- read.table(filename, nrows = nlines, skip = (start_row-1), header = FALSE, sep = "\t", fill=TRUE, quote="")
+    temp_table <- read.table(filename, nrows = nlines, skip = (start_row-1), sep = "\t", fill=TRUE, quote="", col.names = headers, colClasses = "character")
+    # print("row to be added")
+    # print(temp_table)
+    # 
     
     #check total number of columns and set to new cols
     newcols = ncol(temp_table)
@@ -28,8 +37,11 @@ reader_function <- function(filename, nlines=1, nmax=(countLines(file))) {
     #only want to read lines that have the same number of columns as maxcols established by the first 3 ows of new_table
     if (maxcols == newcols) {
       #if ncolumns are the same, add temp_table rows to new_table
-      new_table <- bind_rows(c(new_table, temp_table))
-      
+      #new_table <- bind_rows(c(new_table, temp_table))
+      new_table <- rbind(new_table, temp_table )
+      # print("resulting table after adding tables")
+      # print(new_table)
+      # 
       #increase start_row by nlines 
       start_row <- start_row + nlines
     }
